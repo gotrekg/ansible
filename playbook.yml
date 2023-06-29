@@ -1,0 +1,59 @@
+---
+- name: Debian Post-Install script
+  hosts: all
+  tasks:
+    
+    - name: Update and upgrade Debian system
+      apt:
+      update_cache: yes
+      upgrade: yes
+    - name: Update and upgrade Debian system
+      apt:
+      update_cache: yes
+      upgrade: yes
+    - name: Playbook Roles UFW
+      - include_playbook: roles\common\tasks\ufw.yml  
+    
+    - name: Add the official Docker repository
+      apt_repository:
+      repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+      state: present
+      update_cache: yes
+    - name: Install Docker
+      apt:
+      name: docker-ce
+      state: present
+    - name: Start and enable Docker service
+      service:
+      name: docker
+      state: started
+      enabled: yes
+    - name: Pull the required images
+      docker_image:
+      name: "portainer/portainer"
+      name: "qbittorrent"
+      name: "hurlenko/aria2-ariang"
+      name: "jc21/nginx-proxy-manager"
+      state: present
+    - name: Create and configure Portainer container
+      docker_container:
+      name: "portainer"
+      image: "portainer/portainer"
+      ports:
+        - "9000:9000"
+      volumes:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+      restart_policy: always
+    - name: Start the qbittorrent container using Docker Compose
+      shell: "docker-compose -f /docker-compose/qbittorrent/docker-compose.yml up -d"
+      ##
+    - name: Start the nginx-proxy-manager container using Docker Compose
+      shell: "docker-compose -f docker-compose/nginx-proxy-manager/docker-compose.yml up -d"
+      ##
+    - name: Start the aria2-ng container using Docker Compose
+       shell: "docker-compose -f /docker-compose/aria2-ng/docker-compose.yml up -d"
+      ## 
+    - name: Start the cloudcmd container using Docker Compose
+      shell: "docker-compose -f /docker-compose/cloudcmd/docker-compose.yml up -d"
+    - name: Start the watchtower container using Docker Compose
+      shell: "docker-compose -f /docker-compose/watchtower/docker-compose.yml up -d"
